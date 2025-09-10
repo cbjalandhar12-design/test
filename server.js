@@ -35,7 +35,9 @@ app.get("/download", async (req, reply) => {
 
   let json;
   try {
-    const res = await fetch(apiUrl, { headers: { "User-Agent": "bsky-downloader/1.0" } });
+    const res = await fetch(apiUrl, {
+      headers: { "User-Agent": "bsky-downloader/1.0" },
+    });
     json = await res.json();
   } catch (e) {
     app.log.error(e);
@@ -54,10 +56,24 @@ app.get("/download", async (req, reply) => {
 
   if (chosen.endsWith(".m3u8")) {
     return new Promise((resolve) => {
-      const ffmpeg = spawn("ffmpeg", ["-y", "-i", chosen, "-c", "copy", outPath]);
+      const ffmpeg = spawn("ffmpeg", [
+        "-y",
+        "-hide_banner",
+        "-loglevel", "error",
+        "-protocol_whitelist", "file,http,https,tcp,tls",
+        "-headers", "User-Agent: bsky-downloader/1.0",
+        "-i", chosen,
+        "-c", "copy",
+        outPath,
+      ]);
+
+      ffmpeg.stderr.on("data", (data) => {
+        app.log.error("FFmpeg:", data.toString());
+      });
+
       ffmpeg.on("close", (code) => {
         if (code !== 0) {
-          reply.status(500).send("ffmpeg failed");
+          reply.status(500).send("ffmpeg failed, check logs");
           return resolve();
         }
         reply.header("Content-Type", "video/mp4");
@@ -73,9 +89,13 @@ app.get("/download", async (req, reply) => {
       const res = await fetch(chosen);
       reply.header("Content-Type", "video/mp4");
       reply.header("Content-Disposition", 'attachment; filename="video.mp4"');
+      res.body.on("error", (err) => {
+        app.log.error("Direct fetch error:", err);
+        reply.raw.end();
+      });
       res.body.pipe(reply.raw);
     } catch (e) {
-      app.log.error(e);
+      app.log.error("Direct download failed:", e);
       reply.status(500).send("Direct download failed");
     }
   }
