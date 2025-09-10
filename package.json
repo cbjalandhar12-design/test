@@ -1,0 +1,14 @@
+{
+  "name": "bsky-downloader",
+  "version": "1.0.0",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "fastify": "4.29.1",
+    "@fastify/static": "6.10.2",
+    "node-fetch": "3.3.2"
+  }
+}

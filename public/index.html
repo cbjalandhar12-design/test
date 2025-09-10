@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Bluesky Video Downloader</title>
+</head>
+<body style="font-family: sans-serif; max-width: 600px; margin: 50px auto;">
+  <h1>Bluesky Video Downloader</h1>
+  <form id="downloadForm">
+    <input type="text" id="url" placeholder="Enter Bluesky Post URL" style="width:80%" required />
+    <button type="submit">Download</button>
+  </form>
+  <p id="status"></p>
+  <script>
+    const form = document.getElementById("downloadForm");
+    const status = document.getElementById("status");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      status.textContent = "Processing...";
+      const url = document.getElementById("url").value;
+
+      try {
+        const res = await fetch(`/download?url=${encodeURIComponent(url)}`);
+        if (!res.ok) throw new Error("Download failed");
+        const blob = await res.blob();
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "video.mp4";
+        a.click();
+        status.textContent = "Download complete!";
+      } catch (err) {
+        status.textContent = "Error: " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
